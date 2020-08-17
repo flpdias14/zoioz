@@ -4,7 +4,7 @@ HOST=$1
 
 FREQUENCY=$2
 
-BASE_PATH=$3
+#BASE_PATH=$3
 
 # this will be updated automatically
 data_time=''
@@ -72,6 +72,7 @@ directory_name=`echo "data-$current_date-$current_time"`
 
 while [ True ]
 do
+    sleep $FREQUENCY
     names=$(get_running | jq '.[].Names' | tr '["/]' ' ')
     containers=($names)
     
