@@ -56,7 +56,7 @@ function calc
 
 function get_container_header
 {
-    echo "used_memory;available_memory;memory_percent;number_cpus;cpu_percent;date;time" 
+    echo "used_memory;available_memory;memory_percent;number_cpus;cpu_percent;blkio_read_bytes;blkio_write_bytes;blkio_sync_bytes;blkio_async_bytes;blkio_discard_bytes;blkio_total_bytes;date;time" 
 }
 function get_container_network_header
 {
@@ -72,7 +72,10 @@ directory_name=`echo "data-$current_date-$current_time"`
 
 while [ True ]
 do
-    sleep $FREQUENCY
+    if [ ! -z $FREQUENCY ]
+    then
+        sleep $FREQUENCY
+    fi
     names=$(get_running | jq '.[].Names' | tr '["/]' ' ')
     containers=($names)
     
@@ -101,8 +104,14 @@ do
         system_cpu_delta=$(echo $stat | jq '.cpu_stats.system_cpu_usage - .precpu_stats.system_cpu_usage')
         number_cpus=$(echo $stat | jq '.cpu_stats.online_cpus')
         cpu_percent=$(calc $cpu_delta*$number_cpus*100.0/$system_cpu_delta)
-        
-        echo "$used_memory;$available_memory;$memory_percent;$number_cpus;$cpu_percent;$current_date;$current_time" >> $log_container
+        blkio_read_bytes_recursive=$(echo $stat | jq '.blkio_stats.io_service_bytes_recursive[0].value')
+        blkio_write_bytes_recursive=$(echo $stat | jq '.blkio_stats.io_service_bytes_recursive[1].value')
+        blkio_sync_bytes_recursive=$(echo $stat | jq '.blkio_stats.io_service_bytes_recursive[2].value')
+        blkio_async_bytes_recursive=$(echo $stat | jq '.blkio_stats.io_service_bytes_recursive[3].value')
+        blkio_discard_bytes_recursive=$(echo $stat | jq '.blkio_stats.io_service_bytes_recursive[4].value')
+        blkio_total_bytes_recursive=$(echo $stat | jq '.blkio_stats.io_service_bytes_recursive[5].value')
+
+        echo "$used_memory;$available_memory;$memory_percent;$number_cpus;$cpu_percent;$blkio_read_bytes_recursive;$blkio_write_bytes_recursive;$blkio_sync_bytes_recursive;$blkio_async_bytes_recursive;$blkio_discard_bytes_recursive;$blkio_total_bytes_recursive;$current_date;$current_time" >> $log_container
 
         networks=$(echo $stat | jq '.networks')
         interfaces=($(echo $networks | jq 'keys' | tr '["/]' ' ' ))
